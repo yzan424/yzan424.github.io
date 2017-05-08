@@ -163,7 +163,7 @@
 	  		concavityList[(minIndex + i + 1) % polygon.length] = currCross
 	  		allConcavity[[polygon[(minIndex + i) % polygon.length],polygon[(minIndex + i + 1) % polygon.length],polygon[(minIndex + i + 2) % polygon.length]]] = currCross
 	  	}
-	  	// console.log(polygon[minIndex])
+	  	// console.log("SUCCESS 4.5")
 	  	return concavityList
 	  }
 
@@ -196,6 +196,15 @@
       	var earCutCoords = coords
       	while (earCutCoords.length > 2) {
       	// for (var j = 0; j < 10; j++) {
+      		if (earCutCoords.length == 3 && earCutCoords[0] && earCutCoords[1] && earCutCoords[2] ) {
+      			triangleCoords.push([
+		          {lat: earCutCoords[0][1], lng: earCutCoords[0][0]},
+		          {lat: earCutCoords[1][1], lng: earCutCoords[1][0]},
+		          {lat: earCutCoords[2][1], lng: earCutCoords[2][0]}
+		        ])
+      			break
+      		}
+
       		var i = Math.floor(Math.random() * earCutCoords.length)
       		while (!isEar(earCutCoords[i % earCutCoords.length],earCutCoords[(i+1) % earCutCoords.length],earCutCoords[(i+2) % earCutCoords.length],earCutCoords,coords,concavityList)) {
       			i += 1
@@ -207,8 +216,10 @@
 	        ])
 	        earCutCoords.splice((i+1) % earCutCoords.length,1)
 	        concavityList = concavityCheck(earCutCoords,[])
+	        // console.log(concavityList)
 
       	} 
+      	// console.log("SUCCESS 4.5")
       	return triangleCoords;
       }
 
@@ -233,11 +244,11 @@
 
       function hullify(polygon) {
       	var hullCoords = [[
-	          {lat: 25.839792588803959, lng:-97.530036180393552},
-	          {lat: 25.07991649016799, lng:-80.67979855011788}]]
+	          {lat: 25.83979259, lng:-97.53003618},
+	          {lat: 25.07991649, lng:-80.67979855}]]
       	var currHullEdge = [
-      		  [-97.530036180393552, 25.839792588803959],
-	          [-80.67979855011788, 25.07991649016799]]
+      		  [-97.53003618, 25.83979259],
+	          [-80.67979855, 25.07991649]]
 	    var firstHullEdge = currHullEdge
 
       	for (var j = 0; j < 16; j++) {
@@ -267,61 +278,101 @@
       	return hullCoords
       }
 
-      function findPolygons(adjacencyList,hull,concavityList) {
+      function findPolygons(adjacencyList,hull) {
       	var polygonList = []
-      	for (var i = 0; i < hull.length; i++) {
-      		console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
+      	for (var i = 0; i < 6; i++) {
+      		if (i == 2) {
+      			continue
+      		}
+      		
+      		// console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
       		var currEdge = [[hull[i][0].lng,hull[i][0].lat],[hull[i][1].lng,hull[i][1].lat]]
       		var currPolygon = [currEdge[0]]
       		var currVertex = currEdge[0]
+      		console.log("ITERATION",i,currEdge)
+
+			// for (var p = 0; p < adjacencyList[currEdge[0]].length; p++) {
+   //    			console.log(adjacencyList[currEdge[0]][p])
+   //    		}
+      		
+      		// console.log("TARGET",currEdge[1])
+      		cont = false
+      		for (var p = 0; p < adjacencyList[currEdge[0]].length; p++) {
+      			// console.log(adjacencyList[currEdge[0]][p], currEdge[1],adjacencyList[currEdge[0]][p][0] == currEdge[1][0] && adjacencyList[currEdge[0]][p][0] == currEdge[1][0])
+      			if (adjacencyList[currEdge[0]][p][0] == currEdge[1][0] && adjacencyList[currEdge[0]][p][0] == currEdge[1][0]) {
+      				cont = true
+      			}
+      		}
+      		if (cont) {
+      			continue
+      		}
+      		
       		// console.log(currVertex,adjacencyList[currVertex],adjacencyList[[currVertex[1],currVertex[0]]])
-  			var minAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][0])
+      		// console.log(currVertex)
+      		// PROBLEM: IT LOOKS LIKE ADJACENT HULL EDGE IS NOT IN ADJACENCYLIST
+      		// SOLUTION: ADD A CONDITIONAL TO PREVENT BACKTRACKING TO PREVIOUS HULL EDGE
+  			var minAngle = 2 * Math.PI
   			var minVertex = adjacencyList[currVertex][0]
-  			for (var j = 1; j < adjacencyList[currVertex].length; j++) {
+  			for (var j = 0; j < adjacencyList[currVertex].length; j++) {
   				var currAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][j])
-  				if (currAngle < minAngle) {
-  					minAngle = currAngle
-  					minVertex = adjacencyList[currVertex][j]
+  				if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]) > 0) {
+      				currAngle = 2 * Math.PI - currAngle
+      			}
+      			console.log("Vertex #",j,adjacencyList[currVertex][j],currAngle)
+  				if (currAngle < minAngle && currAngle !== 0) {
+  					if (i !== 0 && adjacencyList[currVertex][j][0] !== hull[i - 1][0] && adjacencyList[currVertex][j][1] !== hull[i - 1][1]) {
+	  					minAngle = currAngle
+	  					minVertex = adjacencyList[currVertex][j]
+	  				}
   				}
   			} 
+  			console.log("BEST",minVertex,minAngle)
   			// console.log(currEdge[0][0],currEdge[0][1],currEdge[1][0],currEdge[1][1])
   			currPolygon.push(minVertex)
   			currEdge = [currEdge[0],minVertex]
   			
       		while (true) {
-      			console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
+      			// console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
   				// console.log(currEdge[0][0],currEdge[0][1],currEdge[1][0],currEdge[1][1])
       			currVertex = currEdge[1]
       			// if (currEdge == [[hull[i][0][1],hull[i][0][0]],[hull[i][1][1],hull[i][1][0]]]) {
       			// 	currVertex = currEdge[0]
       			// }
-      			var maxAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][0])
-      			if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][0]) < 0) {
-  					maxAngle = 2 * Math.PI - maxAngle
-  				}
-      			var maxVertex = adjacencyList[currVertex][0]
-      			console.log(currVertex,adjacencyList[currVertex])
-      			// console.log("Vertex # 0",adjacencyList[currVertex][0],maxAngle)
-      			for (var j = 1; j < adjacencyList[currVertex].length; j++) {
+      			var maxAngle = 0
+      			var maxVertex = 0
+      			console.log(currVertex[1],currVertex[0])
+      			for (var j = 0; j < adjacencyList[currVertex].length; j++) {
       				var currAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][j])
-      				if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][0]) < 0) {
+      				// console.log(currEdge[0],currEdge[1],adjacencyList[currVertex][j],crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]))
+      				if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]) > 0) {
       					currAngle = 2 * Math.PI - currAngle
       				}
-      				// console.log("Vertex #",j,adjacencyList[currVertex][j],currAngle)
+      				console.log("Vertex #",j,adjacencyList[currVertex][j],currAngle)
       				if (currAngle > maxAngle && currAngle !== 2 * Math.PI) {
       					maxAngle = currAngle
       					maxVertex = adjacencyList[currVertex][j]
       				}
       			} 
-      			// console.log("BEST",maxVertex,maxAngle)
+      			console.log("BEST",maxVertex,maxAngle)
+      			// console.log(maxVertex[1],[hull[i][1].lng,hull[i][1].lat],maxVertex[1][0] == hull[i][1].lng,maxVertex[1][1] == hull[i][1].lat)
+      			
       			currPolygon.push(maxVertex)
-      			currEdge = [currEdge[1],maxVertex]
-      			if (currEdge[1] == [hull[i][1].lng,hull[i][1].lat]) {
+      			
+      			if (maxVertex[0] == hull[i][1].lng && maxVertex[1] == hull[i][1].lat) {
+      				// console.log("SUCCESS 1")
       				break
       			}
+      			currEdge = [currEdge[1],maxVertex]
+      			
       		}
       		polygonList.push(currPolygon)
+      		// console.log("SUCCESS")
       	}
+      	// console.log("SUCCESS 3")
+      	// for (var o = 0; o < polygonList[0].length; o++) {
+      	// 	console.log(polygonList[0][o])
+      	// }
+      	
       	return polygonList
       }
 
@@ -347,11 +398,25 @@
         var allVertices = []
         var adjacencyList = {}
         var allConcavity = {}
+
+        for (var i = 0; i < states.length; i++) {
+
+        	for (var j = 0; j < states[i]["geometry"]["coordinates"][0].length; j++) {
+        		// console.log(states[i]["geometry"]["coordinates"][0][j])
+        		states[i]["geometry"]["coordinates"][0][j] = [parseFloat(states[i]["geometry"]["coordinates"][0][j][0].toFixed(8)),parseFloat(states[i]["geometry"]["coordinates"][0][j][1].toFixed(8))]
+        		// console.log(states[i]["geometry"]["coordinates"][0][j])
+        	}
+        	// console.log(states[i]["geometry"]["coordinates"][0])
+    	}
+    	// console.log(states[0]["geometry"]["coordinates"][0])
+
         for (var i = 0; i < states.length; i++) {
         	var currState = states[i]["geometry"]["coordinates"][0]
         	currState.splice(currState.length - 1,1)
         	
         	for (var j = 0; j < currState.length; j++) {
+        		// TODO: TURN THESE INTO FLOATS FROM STRINGS
+        		// console.log()
         		allVertices.push(currState[j])
 
         		if (!adjacencyList[currState[j]]) {
@@ -386,7 +451,7 @@
 	        })
 	        triangle.setMap(map);
     	}
-    	console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
+    	// console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
 
     	var hullCoords = hullify(allVertices)
     	var convexHull = new google.maps.Polygon({
@@ -397,18 +462,28 @@
         })
         convexHull.setMap(map)
 
-        console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
+        // console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
         // console.log(adjacencyList,hullCoords)
         
-        var outsidePolygons = findPolygons(adjacencyList,hullCoords,allConcavity)
+        var outsidePolygons = findPolygons(adjacencyList,hullCoords)
         for (var i = 0; i < outsidePolygons.length; i++) {
-	        var outsideTriCoords = triangulation(outsidePolygons[i],concavityCheck(outsidePolygons[i],[]))
+        	// console.log(outsidePolygons.length)
+        	// console.log("SUCCESS 4")
+	        var outsideTriCoords = triangulation(outsidePolygons[i],concavityCheck(outsidePolygons[i],{}))
+	        // console.log("SUCCESS 5")
+	        // var fakeShit = []
+	        // for (var j = 1; j < outsidePolygons[i].length; j++) {
+	        // 	fakeShit.push([
+	        //   {lat: outsidePolygons[i][j-1][1], lng: outsidePolygons[i][j-1][0]},
+	        //   {lat: outsidePolygons[i][j][1], lng: outsidePolygons[i][j][0]}])
+	        // }
+	        // console.log(fakeShit)
 	        var outsideTriangle = new google.maps.Polygon({
 	          paths: outsideTriCoords,
-	          strokeColor: '#000000',
+	          strokeColor: 'red',
 	          strokeOpacity: 1,
 	          strokeWeight: 2,
-	          fillColor: '#000000',
+	          fillColor: 'red',
 	          fillOpacity: 0.35
 	        })
 	        outsideTriangle.setMap(map)	

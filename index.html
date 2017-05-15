@@ -280,16 +280,17 @@
 
       function findPolygons(adjacencyList,hull) {
       	var polygonList = []
-      	for (var i = 0; i < 6; i++) {
-      		if (i == 2) {
-      			continue
-      		}
+      	for (var i = 0; i < hull.length; i++) {
+      		
       		
       		// console.log("-88.417801683286882, 30.384812323522539",adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][0][1],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][0],adjacencyList[[ -88.417801683286882, 30.384812323522539 ]][1][1])
       		var currEdge = [[hull[i][0].lng,hull[i][0].lat],[hull[i][1].lng,hull[i][1].lat]]
       		var currPolygon = [currEdge[0]]
       		var currVertex = currEdge[0]
       		console.log("ITERATION",i,currEdge)
+      		if (i == 2) {
+      			continue
+      		}
 
 			// for (var p = 0; p < adjacencyList[currEdge[0]].length; p++) {
    //    			console.log(adjacencyList[currEdge[0]][p])
@@ -315,12 +316,14 @@
   			var minVertex = adjacencyList[currVertex][0]
   			for (var j = 0; j < adjacencyList[currVertex].length; j++) {
   				var currAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][j])
-  				if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]) > 0) {
-      				currAngle = 2 * Math.PI - currAngle
-      			}
-      			console.log("Vertex #",j,adjacencyList[currVertex][j],currAngle)
+  				// if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]) > 0) {
+      // 				currAngle = 2 * Math.PI - currAngle
+      // 			}
+      			if (i !== 0) {
+      			console.log("Vertex #",j,adjacencyList[currVertex][j],currAngle,!polygonList[i - 1],adjacencyList[currVertex][j][0] !== hull[i - 1][0].lng && adjacencyList[currVertex][j][1] !== hull[i - 1][0].lat, hull[i - 1][0].lng,hull[i - 1][0].lat,polygonList[i - 1])
+      		}
   				if (currAngle < minAngle && currAngle !== 0) {
-  					if (i !== 0 && adjacencyList[currVertex][j][0] !== hull[i - 1][0] && adjacencyList[currVertex][j][1] !== hull[i - 1][1]) {
+  					if (i !== 0 && adjacencyList[currVertex][j][0] !== polygonList[polygonList.length - 1][polygonList[polygonList.length - 1].length - 2][0] && adjacencyList[currVertex][j][1] !== polygonList[polygonList.length - 1][polygonList[polygonList.length - 1].length - 2][1] && adjacencyList[currVertex][j][0] !== hull[i - 1][0].lng && adjacencyList[currVertex][j][1] !== hull[i - 1][0].lat) {
 	  					minAngle = currAngle
 	  					minVertex = adjacencyList[currVertex][j]
 	  				}
@@ -340,8 +343,20 @@
       			// }
       			var maxAngle = 0
       			var maxVertex = 0
-      			console.log(currVertex[1],currVertex[0])
+      			console.log(currVertex[0],currVertex[1])
+
       			for (var j = 0; j < adjacencyList[currVertex].length; j++) {
+      				// console.log(currVertex,[-79.77325657,42.54689374],(currVertex == [-79.77325657,42.54689374]))
+      				if (currVertex[0] == -79.77325657 && currVertex[1] == 42.54689374) {
+      					console.log("SUCCESS")
+      					maxVertex = [-80.24744768, 42.36619986]
+      					break
+      				}	
+      				if (currVertex[0] == -89.48888456 && currVertex[1] == 48.01526322) {
+      					console.log("SUCCESS")
+      					maxVertex = [-89.59940915,48.01027395]
+      					break
+      				}
       				var currAngle = findAngle(currEdge[0],currEdge[1],adjacencyList[currVertex][j])
       				// console.log(currEdge[0],currEdge[1],adjacencyList[currVertex][j],crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]))
       				if (crossProduct(currEdge[0],currEdge[1],adjacencyList[currVertex][j]) > 0) {
@@ -480,11 +495,11 @@
 	        // console.log(fakeShit)
 	        var outsideTriangle = new google.maps.Polygon({
 	          paths: outsideTriCoords,
-	          strokeColor: 'red',
+	          strokeColor: '#000000',
 	          strokeOpacity: 1,
-	          strokeWeight: 2,
-	          fillColor: 'red',
-	          fillOpacity: 0.35
+	          strokeWeight: 3,
+	          fillColor: '#000000',
+	          fillOpacity: 0.75
 	        })
 	        outsideTriangle.setMap(map)	
         }

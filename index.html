@@ -199,8 +199,15 @@
             if (earCutCoords.length == 3 && earCutCoords[0] && earCutCoords[1] && earCutCoords[2] ) {
                 triangleCoords.push([
                   {lat: earCutCoords[0][1], lng: earCutCoords[0][0]},
-                  {lat: earCutCoords[1][1], lng: earCutCoords[1][0]},
+                  {lat: earCutCoords[1][1], lng: earCutCoords[1][0]}
+                ])
+                triangleCoords.push([
+                  {lat: earCutCoords[0][1], lng: earCutCoords[0][0]},
                   {lat: earCutCoords[2][1], lng: earCutCoords[2][0]}
+                ])
+                triangleCoords.push([
+                  {lat: earCutCoords[2][1], lng: earCutCoords[2][0]},
+                  {lat: earCutCoords[1][1], lng: earCutCoords[1][0]}
                 ])
                 adjacencyList[earCutCoords[0]].add(earCutCoords[1])
                 adjacencyList[earCutCoords[0]].add(earCutCoords[2])
@@ -217,9 +224,17 @@
             }
             triangleCoords.push([
               {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
+              {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
+            ])
+            triangleCoords.push([
+              {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
+              {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]}
+            ])
+            triangleCoords.push([
               {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]},
               {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
             ])
+
             adjacencyList[earCutCoords[i % earCutCoords.length]].add(earCutCoords[(i+1) % earCutCoords.length])
             adjacencyList[earCutCoords[i % earCutCoords.length]].add(earCutCoords[(i+2) % earCutCoords.length])
             adjacencyList[earCutCoords[(i+1) % earCutCoords.length]].add(earCutCoords[i % earCutCoords.length])
@@ -263,7 +278,7 @@
         adjacencyList[[-80.67979855, 25.07991649]].add([-97.53003618, 25.83979259])
         var firstHullEdge = currHullEdge
  
-        for (var j = 0; j < 16; j++) {
+        for (var j = 0; j < 17; j++) {
             maxAngle = findAngle(currHullEdge[0],currHullEdge[1],polygon[0])
             maxVertex = polygon[0]
  
@@ -281,9 +296,9 @@
             adjacencyList[currHullEdge[1]].add(maxVertex)
             adjacencyList[maxVertex].add(currHullEdge[1])
 
-            if (maxVertex == firstHullEdge || j == 15) {
-              adjacencyList[[-97.53003618, 25.83979259]].add(maxVertex)
-              adjacencyList[maxVertex].add([-97.53003618, 25.83979259])
+            if (maxVertex == firstHullEdge || j == 16) {
+              // adjacencyList[[-97.53003618, 25.83979259]].add(maxVertex)
+              // adjacencyList[maxVertex].add([-97.53003618, 25.83979259])
               break
             }
             currHullEdge = [
@@ -373,13 +388,16 @@
         // NOTE: This uses cross-domain XHR, and may not work on older browsers.
         // map.data.loadGeoJson(
         //     'https://raw.githubusercontent.com/datasets/geo-ne-admin1-us/master/data/admin1-us.geojson');
- 
+        var allStates = {}
+        var stateColors = {}
         var allVertices = []
         var adjacencyList = {}
         var borderList = {}
         var allConcavity = {}
+        var edgeMapping = {}
  
         for (var i = 0; i < states.length; i++) {
+            states[i]["geometry"]["coordinates"][0].splice(states[i]["geometry"]["coordinates"][0].length - 1,1)
  
             for (var j = 0; j < states[i]["geometry"]["coordinates"][0].length; j++) {
                 states[i]["geometry"]["coordinates"][0][j] = [parseFloat(states[i]["geometry"]["coordinates"][0][j][0].toFixed(8)),parseFloat(states[i]["geometry"]["coordinates"][0][j][1].toFixed(8))]
@@ -395,11 +413,17 @@
                   allVertices.push(states[i]["geometry"]["coordinates"][0][j])
                 }
             }
+
+
+            allStates[["properties"]["name"]] = new Set(states[i]["geometry"]["coordinates"][0])
+            stateColors[["properties"]["name"]] = getRandomColor()
+
         }
- 
+        stateColors["Outside"] = getRandomColor
+        console.log(states.length)
         for (var i = 0; i < states.length; i++) {
             var currState = states[i]["geometry"]["coordinates"][0]
-            currState.splice(currState.length - 1,1)
+            // states[i]["geometry"]["coordinates"][0].splice(states[i]["geometry"]["coordinates"][0].length - 1,1)
            
             for (var j = 0; j < currState.length; j++) {
                 if (!borderList[currState[j]]) {
@@ -428,134 +452,132 @@
  
             var triangleCoords = triangulation(currState,concavityCheck(currState,allConcavity),adjacencyList)
             var currColor = getRandomColor()
-            var triangle = new google.maps.Polygon({
-              paths: triangleCoords,
-              strokeColor: currColor,
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: currColor,
-              fillOpacity: 0.35
-            })
-            triangle.setMap(map);
+            for (var k = 0; k < triangleCoords.length; k++) {
+              
+              edgeMapping[[triangleCoords[k][0].lng,triangleCoords[k][0].lat,triangleCoords[k][1].lng,triangleCoords[k][1].lat]] = new google.maps.Polyline({
+                path: triangleCoords[k],
+                strokeColor: currColor,
+                strokeOpacity: 0.8,
+                strokeWeight: 2
+              })
+              edgeMapping[[triangleCoords[k][0].lng,triangleCoords[k][0].lat,triangleCoords[k][1].lng,triangleCoords[k][1].lat]].setMap(map)
+            }
         }
  
         var hullCoords = hullify(allVertices,adjacencyList)
-        var convexHull = new google.maps.Polygon({
-          paths: hullCoords,
-          strokeColor: '#000000',
-          strokeOpacity: 1,
-          strokeWeight: 3
-        })
-        convexHull.setMap(map)
+        for (var i = 0; i < hullCoords.length; i++) {
+          edgeMapping[[hullCoords[i][0].lng,hullCoords[i][0].lat,hullCoords[i][1].lng,hullCoords[i][1].lat]] = new google.maps.Polyline({
+            path: hullCoords[i],
+            strokeColor: '#000000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2
+          })
+          edgeMapping[[hullCoords[i][0].lng,hullCoords[i][0].lat,hullCoords[i][1].lng,hullCoords[i][1].lat]].setMap(map)
+        }
+        
        
         var outsidePolygons = findPolygons(borderList,hullCoords)
         for (var i = 0; i < outsidePolygons.length; i++) {
             var outsideTriCoords = triangulation(outsidePolygons[i],concavityCheck(outsidePolygons[i],{}),adjacencyList)
-            var outsideTriangle = new google.maps.Polygon({
-              paths: outsideTriCoords,
+            for (var j = 0; j < outsideTriCoords.length; j++) {
+              edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]] = new google.maps.Polygon({
+              paths: outsideTriCoords[j],
               strokeColor: '#000000',
-              strokeOpacity: 1,
-              strokeWeight: 3,
-              fillColor: '#000000',
-              fillOpacity: 0.75
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
             })
-            outsideTriangle.setMap(map)
+            edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]].setMap(map)
+            }
+            
         }
         var overlaidTriCoords = [[
                 {lat: 12.201435, lng: -93.179047},
-                {lat: 25.07991649, lng:-80.67979855},
                 {lat: 25.83979259, lng:-97.53003618}
               ],
               [
                 {lat: 12.201435, lng: -93.179047},
-                {lat: 25.07991649, lng:-80.67979855},
                 {lat: 25.20616, lng: -80.38103}
-              ],[
+              ],
+              [
                 {lat: 12.201435, lng: -93.179047},
-                {lat: 25.83979259, lng:-97.53003618},
+                {lat: 25.07991649, lng:-80.67979855}
+              ],
+              [
+                {lat: 12.201435, lng: -93.179047},
                 {lat: 26.05993419, lng: -98.24017371}
               ],
               [
                 {lat: 12.201435, lng: -93.179047},
-                {lat: 26.05993419, lng: -98.24017371},
                 {lat: 32.53532705, lng: -117.12772885}
               ],
               [
                 {lat: 12.201435, lng: -93.179047},
-                {lat: 32.53532705, lng: -117.12772885},
                 {lat: 34.44722586, lng: -120.36781612}
               ],
               [
                 {lat: 12.201435, lng: -93.179047},
+                {lat: 49.261298, lng: -145}
+              ],
+              [
+                {lat: 49.261298, lng: -145},
+                {lat: 34.60861136, lng: -120.62286515}
+              ],
+              [
                 {lat: 49.261298, lng: -145},
                 {lat: 34.44722586, lng: -120.36781612}
               ],
               [
                 {lat: 49.261298, lng: -145},
-                {lat: 34.44722586, lng: -120.36781612},
-                {lat: 34.60861136, lng: -120.62286515}
-              ],[
-                {lat: 49.261298, lng: -145},
-                {lat: 34.60861136, lng: -120.62286515},
                 {lat: 38.95147289, lng: -123.72696509}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 38.95147289, lng: -123.72696509},
                 {lat: 40.31301769, lng: -124.39795772}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 40.31301769, lng: -124.39795772},
                 {lat: 42.76599, lng: -124.53284}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 42.76599, lng: -124.53284},
                 {lat: 48.18443298, lng: -124.68721008}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 48.18443298, lng: -124.68721008},
                 {lat: 48.37971497, lng: -124.56610107}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 48.37971497, lng: -124.56610107},
                 {lat: 49, lng: -122.84}
               ],[
                 {lat: 49.261298, lng: -145},
-                {lat: 49, lng: -122.84},
                 {lat: 49.38928539, lng: -94.81754025}
               ],
               [
                 {lat: 49.261298, lng: -145},
                 {lat: 50, lng: -47},
+              ],
+              [
+                {lat: 50, lng: -47},
                 {lat: 49.38928539, lng: -94.81754025}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 49.38928539, lng: -94.81754025},
                 {lat: 47.44777599, lng: -69.23708615}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 47.44777599, lng: -69.23708615},
                 {lat: 47.35462922, lng: -68.23430498}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 47.35462922, lng: -68.23430498},
                 {lat: 47.06624889, lng: -67.79035275}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 47.06624889, lng: -67.79035275},
                 {lat: 44.8097, lng: -66.96466}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 44.8097, lng: -66.96466},
                 {lat: 25.20616, lng: -80.38103}
               ],
               [
                 {lat: 50, lng: -47},
-                {lat: 25.20616, lng: -80.38103},
                 {lat: 12.201435, lng: -93.179047}
               ]]
         for (var i = 0; i < overlaidTriCoords.length; i++) {
@@ -565,15 +587,8 @@
           if (!adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]]) {
             adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]] = new Set()
           }
-          if (!adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]]) {
-            adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]] = new Set()
-          }
           adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]].add(adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]])
-          adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]].add(adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]])
           adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].add(adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]])
-          adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].add(adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]])
-          adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]].add(adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]])
-          adjacencyList[[overlaidTriCoords[i][2].lng,overlaidTriCoords[i][2].lat]].add(adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]])
         }
         console.log(adjacencyList)
         var sum = 0.0
@@ -583,16 +598,54 @@
           thing += 1
         }
         console.log("Average Vertex Degree:", sum / parseFloat(thing))
-        var overlaidTriangle = new google.maps.Polygon({
-              paths: overlaidTriCoords,
-              strokeColor: '#000000',
-              strokeOpacity: 1,
-              strokeWeight: 3,
-              fillColor: '#000000',
-              fillOpacity: 0.75
-            })
-            outsideTriangle.setMap(map)
-        
+        for (var i = 0; i < overlaidTriCoords.length; i++) {
+          edgeMapping[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat,overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]] = new google.maps.Polygon({
+            path: overlaidTriCoords[i],
+            strokeColor: '#000000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+          })
+          edgeMapping[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat,overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].setMap(map)
+        }
+        // edgeMapping[[-47,50,-93.179047,12.201435]].setMap(null)
+          
+
+
+
+
+        // var edgeList = {}
+        // edgeList["Outside"] = []
+        // for (key in adjacencyList) {
+        //   for (let item of adjacencyList[key]) {
+        //     var found = false
+        //     for (state in allStates) {
+        //       if (allStates[state].has(key) && allStates[state].has(item)) {
+        //         if (!edgeList[state]) {
+        //           edgeList[state] = []
+        //         }
+        //         edgeList[state].push([{lat: key[1], lng: key[0]},{lat: item[1], lng: item[0]}])
+        //         found = true
+        //       }
+        //     }
+        //     if (!found) {
+        //       edgeList["Outside"].push([{lat: key[1], lng: key[0]},{lat: item[1], lng: item[0]}])
+        //     }
+        //   }
+        // }
+
+        // for (key in edgeList) {
+        //   for (var i = 0; i < edgeList[key].length; i++) {
+        //     var thing = new google.maps.Polyline({
+        //       paths: edgeList[key][i],
+        //       strokeColor: stateColors[key],
+        //       strokeOpacity: 1,
+        //       strokeWeight: 3
+        //     })
+        //     // thing.setMap(map)
+        //   }
+          
+        // }
+
       }
     </script>
     <script async defer

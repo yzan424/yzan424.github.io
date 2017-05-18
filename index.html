@@ -192,23 +192,46 @@
         return true;
       }
  
-      function triangulation(coords,concavityList,adjacencyList) {
+      function triangulation(coords,concavityList,adjacencyList,alreadyFoundCoords) {
         var triangleCoords = []
         var earCutCoords = coords
         while (earCutCoords.length > 2) {
             if (earCutCoords.length == 3 && earCutCoords[0] && earCutCoords[1] && earCutCoords[2] ) {
-                triangleCoords.push([
+                if (!alreadyFoundCoords.has(
+                  earCutCoords[0][1] + earCutCoords[0][0] +
+                  earCutCoords[1][1] + earCutCoords[1][0]
+                )) {
+                  triangleCoords.push([
                   {lat: earCutCoords[0][1], lng: earCutCoords[0][0]},
                   {lat: earCutCoords[1][1], lng: earCutCoords[1][0]}
-                ])
-                triangleCoords.push([
+                  ])
+                  alreadyFoundCoords.add(earCutCoords[0][1] + earCutCoords[0][0] +
+                  earCutCoords[1][1] + earCutCoords[1][0])
+                }
+                
+                if (!alreadyFoundCoords.has(
+                  earCutCoords[0][1] + earCutCoords[0][0] +
+                  earCutCoords[2][1] + earCutCoords[2][0]
+                )) {
+                  triangleCoords.push([
                   {lat: earCutCoords[0][1], lng: earCutCoords[0][0]},
                   {lat: earCutCoords[2][1], lng: earCutCoords[2][0]}
-                ])
-                triangleCoords.push([
+                  ])
+                  alreadyFoundCoords.add(earCutCoords[0][1] + earCutCoords[0][0] +
+                  earCutCoords[2][1] + earCutCoords[2][0])
+                }
+                if (!alreadyFoundCoords.has(
+                  earCutCoords[2][1] + earCutCoords[2][0] +
+                  earCutCoords[1][1] + earCutCoords[1][0]
+                )) {
+                  triangleCoords.push([
                   {lat: earCutCoords[2][1], lng: earCutCoords[2][0]},
                   {lat: earCutCoords[1][1], lng: earCutCoords[1][0]}
-                ])
+                  ])
+                  alreadyFoundCoords.add(earCutCoords[2][1] + earCutCoords[2][0] +
+                  earCutCoords[1][1] + earCutCoords[1][0])
+                }
+                
                 adjacencyList[earCutCoords[0]].add(earCutCoords[1])
                 adjacencyList[earCutCoords[0]].add(earCutCoords[2])
                 adjacencyList[earCutCoords[1]].add(earCutCoords[0])
@@ -222,18 +245,48 @@
             while (!isEar(earCutCoords[i % earCutCoords.length],earCutCoords[(i+1) % earCutCoords.length],earCutCoords[(i+2) % earCutCoords.length],earCutCoords,coords,concavityList)) {
                 i += 1
             }
-            triangleCoords.push([
-              {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
-              {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
-            ])
-            triangleCoords.push([
-              {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
-              {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]}
-            ])
-            triangleCoords.push([
-              {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]},
-              {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
-            ])
+            if (!alreadyFoundCoords.has(
+                earCutCoords[i % earCutCoords.length][1] + earCutCoords[i % earCutCoords.length][0] +
+                earCutCoords[(i+2) % earCutCoords.length][1] + earCutCoords[(i+2) % earCutCoords.length][0]
+              )) {
+              triangleCoords.push([
+                {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
+                {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
+              ])
+              alreadyFoundCoords.add(earCutCoords[i % earCutCoords.length][1] + earCutCoords[i % earCutCoords.length][0] +
+                earCutCoords[(i+2) % earCutCoords.length][1] + earCutCoords[(i+2) % earCutCoords.length][0])
+            }
+            else {
+              // console.log("FOUND")
+            }
+            if (!alreadyFoundCoords.has(
+                earCutCoords[i % earCutCoords.length][1] + earCutCoords[i % earCutCoords.length][0] +
+                earCutCoords[(i+1) % earCutCoords.length][1] + earCutCoords[(i+1) % earCutCoords.length][0]
+              )) {
+              triangleCoords.push([
+                {lat: earCutCoords[i % earCutCoords.length][1], lng: earCutCoords[i % earCutCoords.length][0]},
+                {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]}
+              ])
+              alreadyFoundCoords.add(earCutCoords[i % earCutCoords.length][1] + earCutCoords[i % earCutCoords.length][0] +
+                earCutCoords[(i+1) % earCutCoords.length][1] + earCutCoords[(i+1) % earCutCoords.length][0])
+            }
+            else {
+              // console.log("FOUND")
+            }
+            if (!alreadyFoundCoords.has(
+                earCutCoords[(i+1) % earCutCoords.length][1] + earCutCoords[(i+1) % earCutCoords.length][0] +
+                earCutCoords[(i+2) % earCutCoords.length][1] + earCutCoords[(i+2) % earCutCoords.length][0]
+              )) {
+              triangleCoords.push([
+                {lat: earCutCoords[(i+1) % earCutCoords.length][1], lng: earCutCoords[(i+1) % earCutCoords.length][0]},
+                {lat: earCutCoords[(i+2) % earCutCoords.length][1], lng: earCutCoords[(i+2) % earCutCoords.length][0]}
+              ])
+              alreadyFoundCoords.add(earCutCoords[(i+1) % earCutCoords.length][1] + earCutCoords[(i+1) % earCutCoords.length][0] +
+                earCutCoords[(i+2) % earCutCoords.length][1] + earCutCoords[(i+2) % earCutCoords.length][0])
+            }
+            else {
+              // console.log("FOUND")
+            }
 
             adjacencyList[earCutCoords[i % earCutCoords.length]].add(earCutCoords[(i+1) % earCutCoords.length])
             adjacencyList[earCutCoords[i % earCutCoords.length]].add(earCutCoords[(i+2) % earCutCoords.length])
@@ -274,8 +327,6 @@
         var currHullEdge = [
               [-97.53003618, 25.83979259],
               [-80.67979855, 25.07991649]]
-        adjacencyList[[-97.53003618, 25.83979259]].add([-80.67979855, 25.07991649])
-        adjacencyList[[-80.67979855, 25.07991649]].add([-97.53003618, 25.83979259])
         var firstHullEdge = currHullEdge
  
         for (var j = 0; j < 17; j++) {
@@ -369,6 +420,22 @@
        
         return polygonList
       }
+
+      function findIndependentLowDegree(adjacencyList,allVertices) {
+        var independentVertices = []
+        var randIndex = Math.floor(Math.random() * (allVertices.length - 1))
+        while (true) {
+          // console.log(allVertices[randIndex])
+          if (adjacencyList[allVertices[randIndex]] && adjacencyList[allVertices[randIndex]].size <= 8 && allVertices[randIndex] !== [-93.179047, 12.201435] && allVertices[randIndex] !== [-145,49.261298] && allVertices[randIndex] !== [-47,50]) {
+            break
+          }
+          randIndex = Math.floor(Math.random() * (allVertices.length - 1))
+        }
+        independentVertices.push(allVertices[randIndex])
+        // console.log(allKeys[randIndex],adjacencyList[allKeys[randIndex]])
+
+        return independentVertices
+      }
  
       function getRandomColor() {
         var letters = '0123456789ABCDEF';
@@ -395,6 +462,7 @@
         var borderList = {}
         var allConcavity = {}
         var edgeMapping = {}
+        var alreadyFoundCoords = new Set()
  
         for (var i = 0; i < states.length; i++) {
             states[i]["geometry"]["coordinates"][0].splice(states[i]["geometry"]["coordinates"][0].length - 1,1)
@@ -420,7 +488,7 @@
 
         }
         stateColors["Outside"] = getRandomColor
-        console.log(states.length)
+        // console.log(states.length)
         for (var i = 0; i < states.length; i++) {
             var currState = states[i]["geometry"]["coordinates"][0]
             // states[i]["geometry"]["coordinates"][0].splice(states[i]["geometry"]["coordinates"][0].length - 1,1)
@@ -450,7 +518,7 @@
                 }
             }
  
-            var triangleCoords = triangulation(currState,concavityCheck(currState,allConcavity),adjacencyList)
+            var triangleCoords = triangulation(currState,concavityCheck(currState,allConcavity),adjacencyList,alreadyFoundCoords)
             var currColor = getRandomColor()
             for (var k = 0; k < triangleCoords.length; k++) {
               
@@ -478,7 +546,7 @@
        
         var outsidePolygons = findPolygons(borderList,hullCoords)
         for (var i = 0; i < outsidePolygons.length; i++) {
-            var outsideTriCoords = triangulation(outsidePolygons[i],concavityCheck(outsidePolygons[i],{}),adjacencyList)
+            var outsideTriCoords = triangulation(outsidePolygons[i],concavityCheck(outsidePolygons[i],{}),adjacencyList,alreadyFoundCoords)
             for (var j = 0; j < outsideTriCoords.length; j++) {
               edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]] = new google.maps.Polygon({
               paths: outsideTriCoords[j],
@@ -487,9 +555,26 @@
               strokeWeight: 2,
             })
             edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]].setMap(map)
+            if (outsideTriCoords[j][0].lng == -81.17191321 && outsideTriCoords[j][0].lat == 25.20109772 && outsideTriCoords[j][1].lng == -97.53003618 && outsideTriCoords[j][1].lat == 25.83979259) {
+              // console.log("ATTENTION",alreadyFoundCoords.has(25.83979259 + -97.53003618 + 25.20109772 + -81.17191321))
+              // console.log("ZEROTH")
+              // console.log(outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat)
+              // console.log(edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]])
             }
-            
+            if (outsideTriCoords[j][0].lng == -97.53003618 && outsideTriCoords[j][0].lat == 25.83979259 && outsideTriCoords[j][1].lng == -81.17191321 && outsideTriCoords[j][1].lat == 25.20109772) {
+              // console.log("FIRST")
+              // console.log(outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat)
+              // console.log(edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]])
+            }
+            }
         }
+        // console.log("ATTENTION",alreadyFoundCoords.has([
+        //       {lat: 25.83979259, lng:-97.53003618},
+        //       {lat: 25.20109772, lng:-81.17191321}]),alreadyFoundCoords.has([
+        //       {lat: 25.20109772, lng:-81.17191321},
+        //       {lat: 25.83979259, lng:-97.53003618}]))
+        // console.log("ATTENTION",alreadyFoundCoords.has(25.83979259 + -97.53003618 + 25.20109772 + -81.17191321),alreadyFoundCoords.has(-102.37696932))
+        // console.log(alreadyFoundCoords)
         var overlaidTriCoords = [[
                 {lat: 12.201435, lng: -93.179047},
                 {lat: 25.83979259, lng:-97.53003618}
@@ -587,17 +672,17 @@
           if (!adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]]) {
             adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]] = new Set()
           }
-          adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]].add(adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]])
-          adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].add(adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]])
+          adjacencyList[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat]].add([overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat])
+          adjacencyList[[overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].add([overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat])
         }
-        console.log(adjacencyList)
+        // console.log(adjacencyList)
         var sum = 0.0
         var thing = 0
         for (key in adjacencyList) {
           sum += adjacencyList[key].size
           thing += 1
         }
-        console.log("Average Vertex Degree:", sum / parseFloat(thing))
+        // console.log("Average Vertex Degree:", sum / parseFloat(thing))
         for (var i = 0; i < overlaidTriCoords.length; i++) {
           edgeMapping[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat,overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]] = new google.maps.Polygon({
             path: overlaidTriCoords[i],
@@ -607,45 +692,87 @@
           })
           edgeMapping[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat,overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].setMap(map)
         }
+
+
+
+        var removedVertices = allVertices
+        removedVertices.push([-47,50])
+        removedVertices.push([-93.179047,12.201435])
+        removedVertices.push([-145,49.261298])
+        // var removedVertices = findIndependentLowDegree(adjacencyList,allVertices)
+        var x = 0
+        for (item in adjacencyList) {
+          x += 1
+        }
+        var y = 0
+        for (item in edgeMapping) {
+          y += 1
+        }
+        // console.log(x,y,allVertices.length)
+        var x = 0
+        var y = 0
+        var z = 0
+        // console.log(removedVertices)
+        for (var i = 0; i < removedVertices.length; i++) {
+          for (let vertex of adjacencyList[removedVertices[i]]) {
+            // console.log(removedVertices[i],[-47,50])
+            // PROBLEM: EITHER ADJACENCY LIST OR EDGEMAPPING NOT CORRECT (DEFINITELY ADJACENCY)
+            // console.log("PROBLEM")
+            // console.log(adjacencyList[removedVertices[i]])
+            // console.log(vertex)
+            if (removedVertices[i][0] == -97.53003618 && removedVertices[i][1] == 25.83979259 && vertex[0] == -81.17191321 && vertex[1] == 25.20109772) {
+              // console.log("SECOND")
+              // console.log([removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]])
+              // console.log(edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]])
+            }
+            if (vertex[0] == -97.53003618 && vertex[1] == 25.83979259 && removedVertices[i][0] == -81.17191321 && removedVertices[i][1] == 25.20109772) {
+              // console.log("THIRD")
+              // console.log([removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]])
+              // console.log(edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]])
+            }
+            if (removedVertices[i][0] == -97.53003618 && removedVertices[i][1] == 25.83979259 && vertex[0] == -80.67979855 && vertex[1] == 25.07991649) {
+              // console.log("FOURTH")
+              // console.log([removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]])
+              // console.log(edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]])
+            }
+            if (vertex[0] == -97.53003618 && vertex[1] == 25.83979259 && removedVertices[i][0] == -80.67979855 && removedVertices[i][1] == 25.07991649) {
+              // console.log("FIFTH")
+              // console.log([removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]])
+              // console.log(edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]])
+            }
+            
+            if (edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]]) {
+              x += 1
+              edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]].setMap(null)
+            }
+            if (edgeMapping[[vertex[0],vertex[1],removedVertices[i][0],removedVertices[i][1]]]) {
+              y += 1
+              edgeMapping[[vertex[0],vertex[1],removedVertices[i][0],removedVertices[i][1]]].setMap(null)
+            }
+            else {
+              z += 1
+            }
+          }
+        }
+        // same number of edges hit for some reason???
+        // for (var i = 0; i < removedVertices.length; i++) {
+        //   for (var j = 0; j < removedVertices.length; j++) {
+        //     // console.log([removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]])
+        //     if (edgeMapping[[removedVertices[i][0],removedVertices[i][1],removedVertices[j][0],removedVertices[j][1]]]) {
+        //       x += 1
+        //       edgeMapping[[removedVertices[i][0],removedVertices[i][1],removedVertices[j][0],removedVertices[j][1]]].setMap(null)
+        //     }
+        //     if (edgeMapping[[removedVertices[j][0],removedVertices[j][1],removedVertices[i][0],removedVertices[i][1]]]) {
+        //       y += 1
+        //       edgeMapping[[removedVertices[j][0],removedVertices[j][1],removedVertices[i][0],removedVertices[i][1]]].setMap(null)
+        //     }
+        //     else {
+        //       z += 1
+        //     }
+        //   }
+        // }
+        // console.log(x,y,z)
         // edgeMapping[[-47,50,-93.179047,12.201435]].setMap(null)
-          
-
-
-
-
-        // var edgeList = {}
-        // edgeList["Outside"] = []
-        // for (key in adjacencyList) {
-        //   for (let item of adjacencyList[key]) {
-        //     var found = false
-        //     for (state in allStates) {
-        //       if (allStates[state].has(key) && allStates[state].has(item)) {
-        //         if (!edgeList[state]) {
-        //           edgeList[state] = []
-        //         }
-        //         edgeList[state].push([{lat: key[1], lng: key[0]},{lat: item[1], lng: item[0]}])
-        //         found = true
-        //       }
-        //     }
-        //     if (!found) {
-        //       edgeList["Outside"].push([{lat: key[1], lng: key[0]},{lat: item[1], lng: item[0]}])
-        //     }
-        //   }
-        // }
-
-        // for (key in edgeList) {
-        //   for (var i = 0; i < edgeList[key].length; i++) {
-        //     var thing = new google.maps.Polyline({
-        //       paths: edgeList[key][i],
-        //       strokeColor: stateColors[key],
-        //       strokeOpacity: 1,
-        //       strokeWeight: 3
-        //     })
-        //     // thing.setMap(map)
-        //   }
-          
-        // }
-
       }
     </script>
     <script async defer

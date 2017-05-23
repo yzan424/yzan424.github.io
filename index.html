@@ -185,6 +185,7 @@
             return false;
         }
         for (var i = 0; i < polygon.length; i++) {
+          //PROBLEM: INCORRECT HULLIFYING PREVENTS INSIDE TRIANGLE FRM WORKING CORRECTLY
             if (polygon[i] !== v1 && polygon[i] !== v2 && polygon[i] !== v3 && insideTriangle(v1,v2,v3,polygon[i])) {
                 return false;
             }
@@ -287,6 +288,7 @@
             adjacencyList[earCutCoords[(i+2) % earCutCoords.length]].add(earCutCoords[(i+1) % earCutCoords.length])
             earCutCoords.splice((i+1) % earCutCoords.length,1)
             concavityList = concavityCheck(earCutCoords,[])
+            // console.log(concavityList)
  
         }
         return triangleCoords;
@@ -313,25 +315,24 @@
  
       function hullify(polygon,adjacencyList,alreadyFoundCoords) {
         var hullCoords = [[
-              {lat: 25.83979259, lng:-97.53003618},
-              {lat: 25.07991649, lng:-80.67979855}]]
+            {lat: 25.83979259, lng:-97.53003618},
+            {lat: 25.07991649, lng:-80.67979855}]]
         var currHullEdge = [
-              [-97.53003618, 25.83979259],
-              [-80.67979855, 25.07991649]]
+            [-97.53003618, 25.83979259],
+            [-80.67979855, 25.07991649]]
         var firstHullEdge = currHullEdge
- 
-        for (var j = 0; j < 17; j++) {
-            maxAngle = findAngle(currHullEdge[0],currHullEdge[1],polygon[0])
+
+        while (true) {
+            maxAngle = 0
             maxVertex = polygon[0]
- 
-            for (var i = 1; i < polygon.length; i++) {
+            for (var i = 0; i < polygon.length; i++) {
                 var currAngle = findAngle(currHullEdge[0],currHullEdge[1],polygon[i])
                 if (currAngle > maxAngle && currAngle !== 0 && currAngle !== 180) {
                     maxAngle = currAngle
                     maxVertex = polygon[i]
                 }
             }
-            
+
             hullCoords.push([
               {lat: currHullEdge[1][1], lng:currHullEdge[1][0]},
               {lat: maxVertex[1], lng:maxVertex[0]}
@@ -341,9 +342,7 @@
             adjacencyList[currHullEdge[1]].add(maxVertex)
             adjacencyList[maxVertex].add(currHullEdge[1])
 
-            if (maxVertex == firstHullEdge || j == 16) {
-              // adjacencyList[[-97.53003618, 25.83979259]].add(maxVertex)
-              // adjacencyList[maxVertex].add([-97.53003618, 25.83979259])
+            if (maxVertex[0] == firstHullEdge[0][0] && maxVertex[1] == firstHullEdge[0][1]) {
               break
             }
             currHullEdge = [
@@ -353,6 +352,95 @@
         }
  
         return hullCoords
+      }
+
+      function polygonify(points) {
+        var minVertex = [1000,1000]
+        var maxVertex = [-1000,-1000]
+
+        for (var i = 0; i < points.length; i++) {
+          if (points[i][0] < minVertex[0]) {
+            minVertex = points[i]
+          }
+          if (points[i][0] > maxVertex[0]) {
+            maxVertex = points[i]
+          }
+        }
+
+        var above = []
+        var below = []
+        for (var i = 0; i < points.length; i++) {
+          if (!((points[i][0] == minVertex[0] && points[i][1] == minVertex[1]) || (points[i][0] == maxVertex[0] && points[i][1] == maxVertex[1]))) {
+            if (crossProduct(minVertex,maxVertex,points[i]) > 0) {
+              below.push(points[i])
+            }
+            else {
+              above.push(points[i])
+            }
+          }
+        }
+
+        above.sort(function(a, b) {
+          return a[0] - b[0]
+        })
+        below.sort(function(a, b) {
+          return a[0] - b[0]
+        })
+        console.log(above,below)
+        var polygon = []
+        polygon.push(minVertex)
+        for (var i = 0; i < above.length; i++) {
+          polygon.push(above[i])
+        }
+        polygon.push(maxVertex)
+        for (var i = below.length - 1; i > -1; i--) {
+          polygon.push(below[i])
+        }
+        for (var i = 0; i < polygon.length; i++) {
+          console.log(polygon[i])
+        }
+        // if (above.length == 0) {
+        //   polygon.push([
+        //     {lat: minVertex[1], lng:minVertex[0]},
+        //     {lat: maxVertex[1], lng:maxVertex[0]}])
+        // }
+        // else {
+        //   polygon.push([
+        //     {lat: minVertex[1], lng:minVertex[0]},
+        //     {lat: above[0][1], lng:above[0][0]}])
+        //   for (var i = 1; i < above.length; i++) {
+        //     polygon.push([
+        //       {lat: above[i - 1][1], lng:above[i - 1][0]},
+        //       {lat: above[i][1], lng:above[i][0]}])
+        //   }
+        //   polygon.push([
+        //     {lat: above[above.length - 1][1], lng:above[above.length - 1][0]},
+        //     {lat: maxVertex[1], lng:maxVertex[0]}])
+        // }
+        // if (below.length == 0) {
+        //   polygon.push([
+        //     {lat: maxVertex[1], lng:maxVertex[0]},
+        //     {lat: minVertex[1], lng:minVertex[0]}])
+        // }
+        // else {
+        //   polygon.push([
+        //     {lat: maxVertex[1], lng:maxVertex[0]},
+        //     {lat: below[0][1], lng:below[0][0]}])
+        //   for (var i = above.length - 1; i > 0; i--) {
+        //     polygon.push([
+        //       {lat: below[i][1], lng:below[i][0]},
+        //       {lat: below[i - 1][1], lng:below[i - 1][0]}])
+        //   }
+        //   polygon.push([
+        //     {lat: below[0][1], lng:below[0][0]},
+        //     {lat: minVertex[1], lng:minVertex[0]}])
+        // }
+        // console.log("POLYGON")
+        // for (var i = 0; i < polygon.length; i++) {
+        //   console.log(polygon[i][0])
+        // }
+        // console.log(polygon[polygon.length - 1][1])
+        return polygon
       }
  
       function findPolygons(borderList,hull) {
@@ -427,7 +515,7 @@
         }
         independentVertices.push(allVertices[randIndex])
         // console.log(allKeys[randIndex],adjacencyList[allKeys[randIndex]])
-
+        // console.log(independentVertices)
         return independentVertices
       }
  
@@ -669,21 +757,53 @@
           edgeMapping[[overlaidTriCoords[i][0].lng,overlaidTriCoords[i][0].lat,overlaidTriCoords[i][1].lng,overlaidTriCoords[i][1].lat]].setMap(map)
         }
 
-        var removedVertices = allVertices
-        removedVertices.push([-47,50])
-        removedVertices.push([-93.179047,12.201435])
-        removedVertices.push([-145,49.261298])
-        // var removedVertices = findIndependentLowDegree(adjacencyList,allVertices)
+        // var removedVertices = allVertices
+        // removedVertices.push([-47,50])
+        // removedVertices.push([-93.179047,12.201435])
+        // removedVertices.push([-145,49.261298])
+
+        var removedVertices = findIndependentLowDegree(adjacencyList,allVertices)
         for (var i = 0; i < removedVertices.length; i++) {
           for (let vertex of adjacencyList[removedVertices[i]]) {
             if (edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]]) {
               edgeMapping[[removedVertices[i][0],removedVertices[i][1],vertex[0],vertex[1]]].setMap(null)
+              alreadyFoundCoords.delete(removedVertices[i][0] + removedVertices[i][1] + vertex[0] + vertex[1])
             }
             if (edgeMapping[[vertex[0],vertex[1],removedVertices[i][0],removedVertices[i][1]]]) {
               edgeMapping[[vertex[0],vertex[1],removedVertices[i][0],removedVertices[i][1]]].setMap(null)
+              alreadyFoundCoords.delete(removedVertices[i][0] + removedVertices[i][1] + vertex[0] + vertex[1])
             }
           }
+          var newPolygon = adjacencyList[removedVertices[i]]
+          delete adjacencyList[removedVertices[i]]
+          console.log("INIT")
+          console.log("removed:",removedVertices[i])
+          for (var i = 0; i < Array.from(newPolygon).length; i++) {
+            console.log(Array.from(newPolygon)[i][0],Array.from(newPolygon)[i][1])
+          }
+          console.log("HULL")
+          var hull = polygonify(Array.from(newPolygon))
+          // for (var i = 0; i < hull.length; i++) {
+          //   console.log(hull[i][0].lng,hull[i][0].lat)
+          // }
+          console.log("TRIANGLE")
+          var thing = concavityCheck(hull,{})
+          console.log(thing)
+          var outsideTriCoords = triangulation(hull,thing,adjacencyList,alreadyFoundCoords)
+          for (var i = 0; i < outsideTriCoords.length; i++) {
+            console.log(outsideTriCoords[i])
+          }
+          for (var j = 0; j < outsideTriCoords.length; j++) {
+            edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]] = new google.maps.Polygon({
+            paths: outsideTriCoords[j],
+            strokeColor: '#000000',
+            strokeOpacity: 0.8,
+            strokeWeight: 20,
+          })
+          edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]].setMap(map)
+          }
         }
+        //PROBLEM: TELL HULLIFY IT CANNOT CHOOSE SAME TWO VERTICES TO CONNECT EDGE BETWEEN
       }
     </script>
     <script async defer

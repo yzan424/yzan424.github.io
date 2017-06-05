@@ -148,7 +148,7 @@
       function concavityCheck(polygon,allConcavity) {
         var concavityList = []
         for (var i = 0; i < polygon.length; i++) {
-            concavityList.push(true)
+            concavityList.push(false)
         }
         var minIndex = 0
         var minValue = polygon[0][1]
@@ -196,6 +196,7 @@
       function triangulation(coords,concavityList,adjacencyList,alreadyFoundCoords) {
         var triangleCoords = []
         var earCutCoords = coords
+        var breaker = false
         while (earCutCoords.length > 2) {
             if (earCutCoords.length == 3 && earCutCoords[0] && earCutCoords[1] && earCutCoords[2] ) {
                 if (!alreadyFoundCoords.has(
@@ -245,6 +246,15 @@
             var i = Math.floor(Math.random() * earCutCoords.length)
             while (!isEar(earCutCoords[i % earCutCoords.length],earCutCoords[(i+1) % earCutCoords.length],earCutCoords[(i+2) % earCutCoords.length],earCutCoords,coords,concavityList)) {
                 i += 1
+                if (i == 10000) {
+                  breaker = true
+                  console.log("BROKEN")
+                  break
+                  
+                }
+            }
+            if (breaker) {
+              break
             }
             if (!alreadyFoundCoords.has(
                 earCutCoords[i % earCutCoords.length][1] + earCutCoords[i % earCutCoords.length][0] +
@@ -354,7 +364,123 @@
         return hullCoords
       }
 
-      function polygonify(points) {
+      function polygonify(points,adjacencyList) {
+        var polygon = []
+        for (let item of points) {
+          var count = 0
+          var adjVertex = [0,0]
+          for (let item2 of adjacencyList[item]) {
+            if (points.has(item2)) {
+              count += 1
+              adjVertex = item2
+            }
+          }
+
+          if (count == 2) {
+            polygon.push(item)
+            polygon.push(adjVertex)
+            break
+          }
+        }
+        var alreadyFound = new Set(polygon)
+        console.log(-47,50,adjacencyList[[-47,50]])
+        
+        while (polygon.length != points.size) {
+          console.log(polygon.length,points.size)
+          var minAngle = 2 * Math.PI
+          var minVertex = [0,0]
+          console.log(polygon[polygon.length - 1],"ADJACENTS",adjacencyList[polygon[polygon.length - 1]])
+          console.log("ALREADYFOUND",alreadyFound)
+          console.log("POINTS",points)
+          for (let item of adjacencyList[polygon[polygon.length - 1]]) {
+            var potential = false
+            for (let item2 of points) {
+              if (item2[0] == item[0] && item2[1] == item2[1]) {
+                potential = true
+              }
+            }
+            for (let item2 of alreadyFound) {
+              if (item2[0] == item[0] && item2[1] == item2[1]) {
+                potential = false
+              }
+            }
+            console.log(points.has(item),!alreadyFound.has(item),potential)
+            if (potential) {
+              var currAngle = findAngle(polygon[polygon.length - 2],polygon[polygon.length - 1],item)
+              if (currAngle < minAngle) {
+                minVertex = item
+                minAngle = currAngle
+              }
+            }
+          }
+          console.log(minVertex)
+          polygon.push(minVertex)
+          alreadyFound.add(minVertex)
+        }
+
+        var maxVertex = [0,0]
+        for (var i = 0; i < polygon.length; i++) {
+          if (polygon[i][1] > maxVertex[1]) {
+            maxVertex = polygon[i]
+          }
+        }
+        for (var i = 0; i < polygon.length; i++) {
+          if (polygon[i][0] == maxVertex[0] && polygon[i][1] == maxVertex[1]) {
+            var previous = i - 1
+            if (i == 0) {
+              previous = polygon.length - 1
+            }
+            if ((polygon[(i + 1) % polygon.length][0] < polygon[i][0] && polygon[previous][0] > polygon[i][0]) || (polygon[(i + 1) % polygon.length][0] < polygon[i][0] && polygon[previous][0] < polygon[i][0] && findAngle([polygon[i][0] + 1.0,polygon[i][1]],polygon[i],polygon[(i + 1) % polygon.length]) > findAngle([polygon[i][0] + 1.0,polygon[i][1]],polygon[i],polygon[previous])) || (polygon[(i + 1) % polygon.length][0] > polygon[i][0] && polygon[previous][0] > polygon[i][0] && findAngle([polygon[i][0] + 1.0,polygon[i][1]],polygon[i],polygon[(i + 1) % polygon.length]) > findAngle([polygon[i][0] + 1.0,polygon[i][1]],polygon[i],polygon[previous]))) {
+              console.log(polygon)
+              polygon = polygon.reverse()
+              console.log("REVERSED")
+              console.log(polygon)
+            }
+            break
+          }
+        }
+
+        
+
+        return polygon
+
+
+
+        // var polygon = [Array.from(points)[0]]
+        // var currPoint = polygon[0]
+        // var alreadyFound = new Set()
+        // var done = false
+        // while (true) {
+        //   var breaker = false
+        //   console.log(currPoint)
+        //   console.log(adjacencyList[currPoint])
+        //   for (let item of adjacencyList[currPoint]) {
+        //     for (let item2 of points) {
+        //       if (item[0] == item2[0] && item[1] == item2[1] && !alreadyFound.has(item2)) {
+        //         polygon.push(item2)
+        //         alreadyFound.add(item2)
+        //         currPoint = item2
+        //         breaker = true
+        //         if (alreadyFound.size == points.size) {
+        //           done = true
+        //         }
+        //         break
+        //       }
+        //     }
+        //     if (breaker) {
+        //       break
+        //     }
+        //   }
+        //   if (done) {
+        //     break
+        //   }
+        // }
+        // return polygon
+
+      }
+
+      function polygonify2(points,adjacencyList) {
+        points = Array.from(points)
         var minVertex = [1000,1000]
         var maxVertex = [-1000,-1000]
 
@@ -386,7 +512,6 @@
         below.sort(function(a, b) {
           return a[0] - b[0]
         })
-        console.log(above,below)
         var polygon = []
         polygon.push(minVertex)
         for (var i = 0; i < above.length; i++) {
@@ -396,50 +521,6 @@
         for (var i = below.length - 1; i > -1; i--) {
           polygon.push(below[i])
         }
-        for (var i = 0; i < polygon.length; i++) {
-          console.log(polygon[i])
-        }
-        // if (above.length == 0) {
-        //   polygon.push([
-        //     {lat: minVertex[1], lng:minVertex[0]},
-        //     {lat: maxVertex[1], lng:maxVertex[0]}])
-        // }
-        // else {
-        //   polygon.push([
-        //     {lat: minVertex[1], lng:minVertex[0]},
-        //     {lat: above[0][1], lng:above[0][0]}])
-        //   for (var i = 1; i < above.length; i++) {
-        //     polygon.push([
-        //       {lat: above[i - 1][1], lng:above[i - 1][0]},
-        //       {lat: above[i][1], lng:above[i][0]}])
-        //   }
-        //   polygon.push([
-        //     {lat: above[above.length - 1][1], lng:above[above.length - 1][0]},
-        //     {lat: maxVertex[1], lng:maxVertex[0]}])
-        // }
-        // if (below.length == 0) {
-        //   polygon.push([
-        //     {lat: maxVertex[1], lng:maxVertex[0]},
-        //     {lat: minVertex[1], lng:minVertex[0]}])
-        // }
-        // else {
-        //   polygon.push([
-        //     {lat: maxVertex[1], lng:maxVertex[0]},
-        //     {lat: below[0][1], lng:below[0][0]}])
-        //   for (var i = above.length - 1; i > 0; i--) {
-        //     polygon.push([
-        //       {lat: below[i][1], lng:below[i][0]},
-        //       {lat: below[i - 1][1], lng:below[i - 1][0]}])
-        //   }
-        //   polygon.push([
-        //     {lat: below[0][1], lng:below[0][0]},
-        //     {lat: minVertex[1], lng:minVertex[0]}])
-        // }
-        // console.log("POLYGON")
-        // for (var i = 0; i < polygon.length; i++) {
-        //   console.log(polygon[i][0])
-        // }
-        // console.log(polygon[polygon.length - 1][1])
         return polygon
       }
  
@@ -781,15 +862,46 @@
           for (var i = 0; i < Array.from(newPolygon).length; i++) {
             console.log(Array.from(newPolygon)[i][0],Array.from(newPolygon)[i][1])
           }
-          console.log("HULL")
-          var hull = polygonify(Array.from(newPolygon))
+
+
+          // var newPolygon2 = newPolygon
+          // var adjacencyList2 = adjacencyList
+          // console.log("HULL2")
+          // var hull = polygonify2(newPolygon2,adjacencyList2)
           // for (var i = 0; i < hull.length; i++) {
-          //   console.log(hull[i][0].lng,hull[i][0].lat)
+          //   console.log(hull[i][1],hull[i][0])
           // }
+          // console.log("TRIANGLE2")
+          // var thing = concavityCheck(hull,{})
+          // console.log(thing)
+
+          console.log("HULL")
+          var hull = polygonify(newPolygon,adjacencyList)
           console.log("TRIANGLE")
           var thing = concavityCheck(hull,{})
+          for (var i = 0; i < hull.length; i++) {
+            console.log(hull[i][1],hull[i][0])
+          }
           console.log(thing)
+          // var hull2 = hull
+          // console.log(concavityCheck(hull2.reverse(),{}))
+          
+          // for (var i = 0; i < hull.length; i++) {
+          //   hull2.push([hull[i][1],hull[i][0]])
+          // }
           var outsideTriCoords = triangulation(hull,thing,adjacencyList,alreadyFoundCoords)
+          // var hull3 = hull2.reverse()
+          // var adjacencyList2 = adjacencyList
+          // var alreadyFoundCoords2 = alreadyFoundCoords
+          // var thing2 = concavityCheck(hull3,{})
+          // for (var i = 0; i < hull.length; i++) {
+          //   console.log(hull2[i][1],hull2[i][0])
+          // }
+          // console.log(thing2)
+
+
+          
+          // var outsideTriCoords2 = triangulation(hull2,thing2,adjacencyList2,alreadyFoundCoords2)
           for (var i = 0; i < outsideTriCoords.length; i++) {
             console.log(outsideTriCoords[i])
           }
@@ -803,7 +915,6 @@
           edgeMapping[[outsideTriCoords[j][0].lng,outsideTriCoords[j][0].lat,outsideTriCoords[j][1].lng,outsideTriCoords[j][1].lat]].setMap(map)
           }
         }
-        //PROBLEM: TELL HULLIFY IT CANNOT CHOOSE SAME TWO VERTICES TO CONNECT EDGE BETWEEN
       }
     </script>
     <script async defer
